@@ -98,7 +98,7 @@ export default function App() {
     } else if (page === "dashboard" && currentUser?.role === "admin") {
       fetchAdminStats();
     }
-  }, [page, maxDistance, excludeAllergens, filterDiet, currentUser]);
+  }, [page, maxDistance, excludeAllergens, filterDiet, currentUser?.id]);
 
   const fetchCurrentUser = async () => {
     try {
