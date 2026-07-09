@@ -87,6 +87,10 @@ export default function App() {
   useEffect(() => {
     if (page === "explorer") {
       fetchMeals();
+      if (currentUser) {
+        fetchMyReservations();
+        fetchMyMeals();
+      }
     } else if (page === "my-reservations") {
       fetchMyReservations();
     } else if (page === "my-meals") {
@@ -94,7 +98,7 @@ export default function App() {
     } else if (page === "dashboard" && currentUser?.role === "admin") {
       fetchAdminStats();
     }
-  }, [page, maxDistance, excludeAllergens, filterDiet]);
+  }, [page, maxDistance, excludeAllergens, filterDiet, currentUser]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -599,7 +603,8 @@ export default function App() {
                     const isFull = meal.current_guests >= meal.max_guests;
                     const emojiMatch = meal.title.match(/[\u{1F300}-\u{1F9FF}]/u);
                     const emoji = emojiMatch ? emojiMatch[0] : "🥘";
-                    const isMyOwn = meal.cook_id === currentUser.id;
+                    const isMyOwn = currentUser && meal.cook_id === currentUser.id;
+                    const isBooked = currentUser && myReservations.some(p => p.meal_id === meal.id && p.status === 'booked');
 
                     return (
                       <div
@@ -635,7 +640,23 @@ export default function App() {
                               <span className={`meal-card-spots ${isFull ? "full" : ""}`}>
                                 {isFull ? "Complet" : `${meal.current_guests}/${meal.max_guests} convives`}
                               </span>
-                              {!isMyOwn && !isFull && (
+                              {!isMyOwn && isBooked && (
+                                <div className="d-flex align-items-center gap-1">
+                                  <span className="small bg-success text-white px-2 py-1 rounded" style={{ fontSize: "0.75rem" }}>Inscrit</span>
+                                  <button
+                                    className="btn btn-app btn-app-primary py-1 px-2"
+                                    style={{ fontSize: "0.75rem", minHeight: "auto", height: "auto" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setChatMealId(meal.id);
+                                      setShowChatModal(true);
+                                    }}
+                                  >
+                                    <i className="fas fa-comments"></i> Chat
+                                  </button>
+                                </div>
+                              )}
+                              {!isMyOwn && !isBooked && !isFull && (
                                 <button
                                   className="btn btn-app btn-app-primary"
                                   onClick={(e) => {
@@ -648,7 +669,20 @@ export default function App() {
                                 </button>
                               )}
                               {isMyOwn && (
-                                <span className="small bg-secondary text-white px-2 py-1 rounded">Votre repas</span>
+                                <div className="d-flex align-items-center gap-1">
+                                  <span className="small bg-secondary text-white px-2 py-1 rounded" style={{ fontSize: "0.75rem" }}>Votre repas</span>
+                                  <button
+                                    className="btn btn-app btn-app-primary py-1 px-2"
+                                    style={{ fontSize: "0.75rem", minHeight: "auto", height: "auto" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setChatMealId(meal.id);
+                                      setShowChatModal(true);
+                                    }}
+                                  >
+                                    <i className="fas fa-comments"></i> Chat
+                                  </button>
+                                </div>
                               )}
                             </div>
                           </div>

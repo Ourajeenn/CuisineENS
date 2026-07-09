@@ -1,6 +1,6 @@
-# Dossier Technique Complet & Pitch Deck - JustEcoBox
+# Dossier Technique Complet & Pitch Deck - CuisinierEnsemble
 
-Ce document regroupe l'intégralité du dossier technique, le pitch deck investisseur et les détails des maquettes pour le projet JustEcoBox.
+Ce document regroupe l'intégralité du dossier technique, le pitch deck investisseur et les détails des maquettes pour le projet CuisinierEnsemble.
 
 ---
 
@@ -150,7 +150,7 @@ Documentation pour les développeurs Frontend et Partenaires.
 # 📊 PARTIE 2 : PITCH DECK INVESTISSEUR
 
 ## Slide 1 : Couverture
-**Titre** : JustEcoBox
+**Titre** : CuisinierEnsemble
 **Slogan** : Le marché anti-gaspi pour les étudiants.
 **Visuel** : Logo grand format sur fond vert rassurant.
 
@@ -160,7 +160,7 @@ Documentation pour les développeurs Frontend et Partenaires.
 *   **Dilemme Magasin** : Jeter coûte de l'argent (taxes déchets) et nuit à l'image.
 
 ## Slide 3 : Notre Solution
-**JustEcoBox** reconnecte ces deux mondes.
+**CuisinierEnsemble** reconnecte ces deux mondes.
 1.  **Magasin** : Met en ligne ses invendus en 3 clics.
 2.  **Panier -60%** : Vendu 3,50€ (valeur 10€).
 3.  **Retrait** : Directement en magasin, créneau court (fin de journée).
@@ -183,7 +183,7 @@ Documentation pour les développeurs Frontend et Partenaires.
 ## Slide 6 : Modèle Économique
 Commission transparente à la performance.
 *   Prix Panier Moyen : **3,50€**
-*   **JustEcoBox (25%)** : 0,88€ (Marge Brute)
+*   **CuisinierEnsemble (25%)** : 0,88€ (Marge Brute)
 *   **Magasin (75%)** : 2,62€ (Revenu Net)
 *   *Exemple* : 500 paniers/jour = 440€ de revenu quotidien pour nous.
 
@@ -192,7 +192,7 @@ Commission transparente à la performance.
 | :--- | :--- | :--- |
 | **Too Good To Go** | Mass Market | UX dense, concurrence féroce pour l'utilisateur |
 | **Phenix** | B2B / Pro | Moins orienté consommateurs étudiants |
-| **JustEcoBox** | **Niche Étudiante** | **Prix unique (3,50€), Gamification forte, UX Gen-Z** |
+| **CuisinierEnsemble** | **Niche Étudiante** | **Prix unique (3,50€), Gamification forte, UX Gen-Z** |
 
 **Notre Secret Sauce** : L'approche communautaire campus ambassadeurs + Gamification de l'impact écologique.
 
@@ -224,7 +224,7 @@ Commission transparente à la performance.
 
 ## Slide 13 : Contact
 **Questions ?**
-contact@justecobox.com | www.justecobox.com
+contact@cuisinierensemble.com | www.cuisinierensemble.com
 
 ---
 

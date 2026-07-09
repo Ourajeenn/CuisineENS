@@ -1,6 +1,6 @@
-# FICHE_TECH : Dossier Technique Complet & Pitch Deck - JustEcoBox
+# FICHE_TECH : Dossier Technique Complet & Pitch Deck - CuisinierEnsemble
 
-Ce document constitue le livrable final technique et stratégique pour le projet JustEcoBox. Il regroupe l'architecture, la documentation technique, la sécurité, ainsi que le support de présentation (Pitch Deck).
+Ce document constitue le livrable final technique et stratégique pour le projet CuisinierEnsemble. Il regroupe l'architecture, la documentation technique, la sécurité, ainsi que le support de présentation (Pitch Deck).
 
 ---
 
@@ -117,7 +117,7 @@ erDiagram
 
 ## 3. Documentation API (Swagger)
 
-Description détaillée des 10 endpoints principaux de l'API REST JustEcoBox.
+Description détaillée des 10 endpoints principaux de l'API REST CuisinierEnsemble.
 
 ### 3.1 Authentification (`Auth`)
 
@@ -332,7 +332,7 @@ Met à jour les préférences de notification et alimentaires.
 # 📊 PARTIE 2 : PITCH DECK INVESTISSEUR
 
 ## Slide 1 : Couverture
-*   **Titre** : JustEcoBox
+*   **Titre** : CuisinierEnsemble
 *   **Sous-titre** : Le marché anti-gaspi pour les étudiants.
 *   **Identité** : Logo Vert/Eco.
 
@@ -350,9 +350,9 @@ Met à jour les préférences de notification et alimentaires.
 
 ## Slide 4 : Personas clés
 *   **Lucas (21 ans)** : Étudiant, Smartphone additc. Veut manger pas cher mais éthique.
-    *   *Pourquoi JustEcoBox ?* 3,50€ le repas de qualité + Fierté action climat.
+    *   *Pourquoi CuisinierEnsemble ?* 3,50€ le repas de qualité + Fierté action climat.
 *   **Sophie (30 ans)** : Gérante HyperFresh.
-    *   *Pourquoi JustEcoBox ?* Réduit ses pertes, attire une nouvelle clientèle jeune.
+    *   *Pourquoi CuisinierEnsemble ?* Réduit ses pertes, attire une nouvelle clientèle jeune.
 
 ## Slide 5 : Marché & Opportunité
 *   **TAM (France)** : 2.9M Étudiants (435M€/an potentiel).
@@ -361,11 +361,11 @@ Met à jour les préférences de notification et alimentaires.
 
 ## Slide 6 : Modèle Économique
 *   **Commission** : 25% par transaction.
-*   **Unit Economics** : Sur un panier à 3,50€ -> **0,88€ pour JustEcoBox**.
+*   **Unit Economics** : Sur un panier à 3,50€ -> **0,88€ pour CuisinierEnsemble**.
 *   **Projection** : 500 paniers/jour = 440€ de marge brute quotidienne.
 
 ## Slide 8 : Concurrence & Différenciation
-| | JustEcoBox | Too Good To Go | Phenix |
+| | CuisinierEnsemble | Too Good To Go | Phenix |
 |---|---|---|---|
 | **Cible** | **Étudiants** | Tout public | B2B |
 | **Prix** | **Fixe (3,50€)** | Variable | Variable |
@@ -397,7 +397,7 @@ Met à jour les préférences de notification et alimentaires.
 **Objectif** : Lancement Pilote Paris (10 magasins) en Mars.
 
 ## Slide 13 : Questions & Contact
-Equipe Fondatrice - contact@justecobox.com
+Equipe Fondatrice - contact@cuisinierensemble.com
 
 ---
 

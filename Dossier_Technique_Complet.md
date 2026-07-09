@@ -1,6 +1,6 @@
-# Dossier Technique Complet - JustEcoBox
+# Dossier Technique Complet - CuisinierEnsemble
 
-Ce document détaille l'architecture technique, l'API, le modèle de données et la vision Data/IA de la solution JustEcoBox.
+Ce document détaille l'architecture technique, l'API, le modèle de données et la vision Data/IA de la solution CuisinierEnsemble.
 
 ## 1. Architecture Technique
 
@@ -60,7 +60,7 @@ graph TD
 
 ## 2. Documentation API (Simplifiée)
 
-Voici les principaux endpoints de l'API REST JustEcoBox.
+Voici les principaux endpoints de l'API REST CuisinierEnsemble.
 
 ### Authentification
 
@@ -109,7 +109,7 @@ Crée une réservation pour un panier.
     {
       "reservationId": "RES-8854",
       "status": "confirmed",
-      "qrCodeUrl": "https://api.justecobox.com/qr/RES-8854.png"
+      "qrCodeUrl": "https://api.cuisinierensemble.com/qr/RES-8854.png"
     }
     ```
 
@@ -195,7 +195,7 @@ erDiagram
 
 ## 4. Vision Data & IA
 
-L'intelligence artificielle est au cœur de JustEcoBox pour optimiser la lutte anti-gaspillage.
+L'intelligence artificielle est au cœur de CuisinierEnsemble pour optimiser la lutte anti-gaspillage.
 
 ### Collecte de Données
 *   **Comportementales** : Historique d'achats, paniers consultés mais non achetés, heures de connexion.
@@ -214,7 +214,7 @@ L'intelligence artificielle est au cœur de JustEcoBox pour optimiser la lutte a
 *   **Fonction** : Prédire la quantité d'invendus du jour et suggérer le prix optimal pour tout écouler avant la fermeture.
 *   **Valeur** : Maximisation des revenus et zéro déchet garanti.
 
-#### 3. Assistant Intelligent "JEB" (NLP/LLM)
+#### 3. Assistant Intelligent "CE" (NLP/LLM)
 *   **Technologie** : Large Language Model (type GPT optimisé).
 *   **Fonction** : Chatbot interactif capable de répondre aux questions sur l'impact écologique, ou de proposer des recettes avec les ingrédients du panier du jour.
 

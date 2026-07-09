@@ -31,7 +31,15 @@ export default function ChatRoom({ mealId, currentUser }) {
     const token = localStorage.getItem("access_token");
     if (!token) return;
 
-    const wsUrl = `ws://localhost:8000/ws/chat/${mealId}?token=${token}`;
+    // Dynamically build WS URL from VITE_API_URL or current location
+    let wsBaseUrl = "ws://localhost:8000";
+    if (import.meta.env.VITE_API_URL) {
+      wsBaseUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws");
+    } else if (window.location.hostname !== "localhost") {
+      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      wsBaseUrl = `${protocol}://${window.location.host}`;
+    }
+    const wsUrl = `${wsBaseUrl}/ws/chat/${mealId}?token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
