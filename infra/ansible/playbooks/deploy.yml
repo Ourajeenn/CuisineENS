@@ -1,0 +1,72 @@
+---
+# ══════════════════════════════════════════════════════════════════════════════
+# Playbook : deploy.yml
+# Déploie les nouvelles images Docker sur Fly.io (backend + frontend)
+# Usage : ansible-playbook playbooks/deploy.yml \
+#           -e "fly_api_token=xxx backend_image=ghcr.io/... frontend_image=ghcr.io/..."
+# ══════════════════════════════════════════════════════════════════════════════
+- name: "🚀 CuisineEnsemble — Déploiement Fly.io"
+  hosts: flyio
+  gather_facts: false
+
+  tasks:
+    # ── Déploiement Backend ─────────────────────────────────────────────────
+    - name: "🐍 Déployer le backend FastAPI"
+      command: >
+        flyctl deploy
+        --app "{{ fly_backend_app }}"
+        --image "{{ backend_image }}"
+        --config "../../fly.backend.toml"
+        --remote-only
+        --wait-timeout {{ deploy_timeout | default(300) }}
+      register: deploy_backend_result
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+      async: 400
+      poll: 10
+
+    - name: "✅ Backend déployé"
+      debug:
+        msg: "Backend '{{ fly_backend_app }}' déployé : {{ backend_image }}"
+
+    # ── Déploiement Frontend ────────────────────────────────────────────────
+    - name: "⚛️ Déployer le frontend React"
+      command: >
+        flyctl deploy
+        --app "{{ fly_frontend_app }}"
+        --image "{{ frontend_image }}"
+        --config "../../fly.frontend.toml"
+        --remote-only
+        --wait-timeout {{ deploy_timeout | default(300) }}
+      register: deploy_frontend_result
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+      async: 400
+      poll: 10
+
+    - name: "✅ Frontend déployé"
+      debug:
+        msg: "Frontend '{{ fly_frontend_app }}' déployé : {{ frontend_image }}"
+
+    # ── Vérification de l'état des machines ────────────────────────────────
+    - name: "Vérifier le statut des machines backend"
+      command: flyctl status --app "{{ fly_backend_app }}"
+      register: backend_status
+      changed_when: false
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Afficher le statut backend"
+      debug:
+        msg: "{{ backend_status.stdout_lines }}"
+
+    - name: "Vérifier le statut des machines frontend"
+      command: flyctl status --app "{{ fly_frontend_app }}"
+      register: frontend_status
+      changed_when: false
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Afficher le statut frontend"
+      debug:
+        msg: "{{ frontend_status.stdout_lines }}"

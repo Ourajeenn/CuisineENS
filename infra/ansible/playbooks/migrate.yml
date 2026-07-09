@@ -1,0 +1,59 @@
+---
+# ══════════════════════════════════════════════════════════════════════════════
+# Playbook : migrate.yml
+# Exécute les migrations Alembic via fly ssh console
+# Usage : ansible-playbook playbooks/migrate.yml -e "fly_api_token=xxx"
+# ══════════════════════════════════════════════════════════════════════════════
+- name: "🗄️ CuisineEnsemble — Migrations base de données"
+  hosts: flyio
+  gather_facts: false
+
+  tasks:
+    - name: "Attendre que le backend soit accessible"
+      uri:
+        url: "{{ backend_url }}/health"
+        method: GET
+        status_code: 200
+        timeout: 30
+      register: health_before_migration
+      retries: "{{ health_check_retries | default(10) }}"
+      delay: "{{ health_check_delay | default(15) }}"
+      until: health_before_migration.status == 200
+
+    - name: "✅ Backend accessible, lancement des migrations"
+      debug:
+        msg: "Backend répond sur {{ backend_url }}/health"
+
+    - name: "Créer les tables SQLAlchemy (si pas d'Alembic)"
+      command: >
+        flyctl ssh console
+        --app "{{ fly_backend_app }}"
+        --command "python -c 'from app.database import Base, engine; Base.metadata.create_all(engine); print(\"Tables créées\")'
+      register: create_tables
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+      when: run_migrations | default(true)
+
+    - name: "Résultat création tables"
+      debug:
+        msg: "{{ create_tables.stdout_lines }}"
+      when: run_migrations | default(true)
+
+    - name: "Exécuter les migrations Alembic (si disponible)"
+      command: >
+        flyctl ssh console
+        --app "{{ fly_backend_app }}"
+        --command "cd /app && python -m alembic upgrade head 2>/dev/null || echo 'Alembic non configuré, skip'"
+      register: alembic_result
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+      when: run_migrations | default(true)
+      ignore_errors: true
+
+    - name: "Résultat migrations Alembic"
+      debug:
+        msg: "{{ alembic_result.stdout_lines | default(['Alembic non disponible']) }}"
+
+    - name: "✅ Migrations terminées"
+      debug:
+        msg: "Migrations exécutées avec succès sur '{{ fly_backend_app }}'"

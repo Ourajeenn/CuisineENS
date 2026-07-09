@@ -1,0 +1,5 @@
+---
+# Defaults — Role flyctl
+flyctl_version: "latest"
+flyctl_install_dir: "/usr/local/bin"
+flyctl_install_script_url: "https://fly.io/install.sh"

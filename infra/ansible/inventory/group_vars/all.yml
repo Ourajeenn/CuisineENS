@@ -1,0 +1,30 @@
+---
+# ══════════════════════════════════════════════════════════════════════════════
+# Variables globales — CuisineEnsemble Ansible
+# Les valeurs sensibles (fly_api_token, secret_key) doivent être passées
+# via --extra-vars ou via des variables d'environnement CI/CD.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Applications Fly.io ───────────────────────────────────────────────────────
+fly_backend_app: "cuisine-ensemble-api"
+fly_frontend_app: "cuisine-ensemble-web"
+fly_postgres_app: "cuisine-ensemble-db"
+fly_region: "cdg"
+
+# ── Images Docker ─────────────────────────────────────────────────────────────
+backend_image: "ghcr.io/ourajeenn/cuisine-ensemble-backend:latest"
+frontend_image: "ghcr.io/ourajeenn/cuisine-ensemble-frontend:latest"
+
+# ── Health check URLs ─────────────────────────────────────────────────────────
+backend_url: "https://cuisine-ensemble-api.fly.dev"
+frontend_url: "https://cuisine-ensemble-web.fly.dev"
+health_check_path: "/health"
+health_check_retries: 10
+health_check_delay: 15
+
+# ── Migrations ────────────────────────────────────────────────────────────────
+run_migrations: true
+migration_command: "cd /app && python -m alembic upgrade head"
+
+# ── Timeouts ──────────────────────────────────────────────────────────────────
+deploy_timeout: 300

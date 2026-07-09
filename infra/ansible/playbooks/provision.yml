@@ -1,0 +1,171 @@
+---
+# ══════════════════════════════════════════════════════════════════════════════
+# Playbook : provision.yml
+# Initialise l'infrastructure Fly.io (IDEMPOTENT)
+# Usage : ansible-playbook playbooks/provision.yml -e "fly_api_token=xxx"
+# ══════════════════════════════════════════════════════════════════════════════
+- name: "🏗️ CuisineEnsemble — Provisionner l'infrastructure Fly.io"
+  hosts: flyio
+  gather_facts: false
+
+  pre_tasks:
+    - name: "Vérifier que flyctl est disponible"
+      command: flyctl version
+      register: flyctl_version
+      changed_when: false
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Afficher la version de flyctl"
+      debug:
+        msg: "flyctl version : {{ flyctl_version.stdout }}"
+
+    - name: "Vérifier l'authentification Fly.io"
+      command: flyctl auth whoami
+      register: fly_whoami
+      changed_when: false
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Afficher l'utilisateur connecté"
+      debug:
+        msg: "Connecté en tant que : {{ fly_whoami.stdout }}"
+
+  roles:
+    - role: flyctl
+
+  tasks:
+    # ── Créer l'app backend ─────────────────────────────────────────────────
+    - name: "Créer l'app backend Fly.io"
+      command: >
+        flyctl apps create "{{ fly_backend_app }}"
+        --org "{{ fly_org | default('personal') }}"
+      register: create_backend
+      failed_when:
+        - create_backend.rc != 0
+        - '"already exists" not in create_backend.stderr'
+      changed_when: '"already exists" not in create_backend.stderr'
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Statut app backend"
+      debug:
+        msg: >-
+          {% if 'already exists' in create_backend.stderr %}
+          App '{{ fly_backend_app }}' existe déjà ✅
+          {% else %}
+          App '{{ fly_backend_app }}' créée ✅
+          {% endif %}
+
+    # ── Créer l'app frontend ────────────────────────────────────────────────
+    - name: "Créer l'app frontend Fly.io"
+      command: >
+        flyctl apps create "{{ fly_frontend_app }}"
+        --org "{{ fly_org | default('personal') }}"
+      register: create_frontend
+      failed_when:
+        - create_frontend.rc != 0
+        - '"already exists" not in create_frontend.stderr'
+      changed_when: '"already exists" not in create_frontend.stderr'
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Statut app frontend"
+      debug:
+        msg: >-
+          {% if 'already exists' in create_frontend.stderr %}
+          App '{{ fly_frontend_app }}' existe déjà ✅
+          {% else %}
+          App '{{ fly_frontend_app }}' créée ✅
+          {% endif %}
+
+    # ── Créer le cluster Postgres ───────────────────────────────────────────
+    - name: "Créer le cluster Postgres Fly.io"
+      command: >
+        flyctl postgres create
+        --name "{{ fly_postgres_app }}"
+        --org "{{ fly_org | default('personal') }}"
+        --region "{{ fly_region }}"
+        --initial-cluster-size 1
+        --vm-size shared-cpu-1x
+        --volume-size 1
+      register: create_postgres
+      failed_when:
+        - create_postgres.rc != 0
+        - '"already exists" not in create_postgres.stderr'
+      changed_when: '"already exists" not in create_postgres.stderr'
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Statut Postgres"
+      debug:
+        msg: >-
+          {% if 'already exists' in create_postgres.stderr %}
+          Postgres '{{ fly_postgres_app }}' existe déjà ✅
+          {% else %}
+          Postgres '{{ fly_postgres_app }}' créé ✅
+          {% endif %}
+
+    # ── Attacher Postgres au backend ────────────────────────────────────────
+    - name: "Attacher Postgres au backend"
+      command: >
+        flyctl postgres attach "{{ fly_postgres_app }}"
+        --app "{{ fly_backend_app }}"
+      register: attach_postgres
+      failed_when:
+        - attach_postgres.rc != 0
+        - '"already" not in attach_postgres.stderr'
+        - '"already" not in attach_postgres.stdout'
+      changed_when: '"already" not in attach_postgres.stdout'
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    # ── Allouer des adresses IP publiques ───────────────────────────────────
+    - name: "Allouer une IP IPv4 pour le backend"
+      command: flyctl ips allocate-v4 --app "{{ fly_backend_app }}"
+      register: backend_ipv4
+      failed_when:
+        - backend_ipv4.rc != 0
+        - '"already" not in backend_ipv4.stderr'
+      changed_when: backend_ipv4.rc == 0
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Allouer une IP IPv6 pour le backend"
+      command: flyctl ips allocate-v6 --app "{{ fly_backend_app }}"
+      register: backend_ipv6
+      failed_when:
+        - backend_ipv6.rc != 0
+        - '"already" not in backend_ipv6.stderr'
+      changed_when: backend_ipv6.rc == 0
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Allouer une IP IPv4 pour le frontend"
+      command: flyctl ips allocate-v4 --app "{{ fly_frontend_app }}"
+      register: frontend_ipv4
+      failed_when:
+        - frontend_ipv4.rc != 0
+        - '"already" not in frontend_ipv4.stderr'
+      changed_when: frontend_ipv4.rc == 0
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Allouer une IP IPv6 pour le frontend"
+      command: flyctl ips allocate-v6 --app "{{ fly_frontend_app }}"
+      register: frontend_ipv6
+      failed_when:
+        - frontend_ipv6.rc != 0
+        - '"already" not in frontend_ipv6.stderr'
+      changed_when: frontend_ipv6.rc == 0
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    # ── Résumé ──────────────────────────────────────────────────────────────
+    - name: "✅ Résumé de la provision"
+      debug:
+        msg:
+          - "Backend  : https://{{ fly_backend_app }}.fly.dev"
+          - "Frontend : https://{{ fly_frontend_app }}.fly.dev"
+          - "Postgres : {{ fly_postgres_app }}.internal"
+          - "Région   : {{ fly_region }}"

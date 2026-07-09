@@ -1,0 +1,47 @@
+---
+# Tasks — Role fly_deploy
+# Déploie une image Docker sur une application Fly.io
+# Variables requises :
+#   - fly_app_name  : nom de l'app Fly.io
+#   - fly_image     : image Docker à déployer
+#   - fly_config    : chemin vers le fly.toml
+#   - fly_api_token : token d'API Fly.io
+
+- name: "Vérifier que les variables requises sont définies"
+  assert:
+    that:
+      - fly_app_name is defined and fly_app_name != ''
+      - fly_image is defined and fly_image != ''
+      - fly_api_token is defined and fly_api_token != ''
+    fail_msg: "Variables manquantes : fly_app_name, fly_image, fly_api_token sont requis"
+
+- name: "Déployer '{{ fly_app_name }}' avec '{{ fly_image }}'"
+  command: >
+    flyctl deploy
+    --app "{{ fly_app_name }}"
+    --image "{{ fly_image }}"
+    {% if fly_config is defined and fly_config != '' %}
+    --config "{{ fly_config }}"
+    {% endif %}
+    {% if remote_only %}--remote-only{% endif %}
+    --wait-timeout {{ deploy_timeout }}
+  register: deploy_result
+  environment:
+    FLY_API_TOKEN: "{{ fly_api_token }}"
+  async: "{{ deploy_timeout + 60 }}"
+  poll: 15
+
+- name: "Afficher le résultat du déploiement"
+  debug:
+    msg: "{{ deploy_result.stdout_lines | default([]) }}"
+
+- name: "Vérifier le statut de l'app post-déploiement"
+  command: flyctl status --app "{{ fly_app_name }}"
+  register: app_status
+  changed_when: false
+  environment:
+    FLY_API_TOKEN: "{{ fly_api_token }}"
+
+- name: "Statut de '{{ fly_app_name }}'"
+  debug:
+    msg: "{{ app_status.stdout_lines }}"

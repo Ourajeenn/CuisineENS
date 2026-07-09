@@ -1,0 +1,6 @@
+---
+# Defaults — Role healthcheck
+healthcheck_retries: 10
+healthcheck_delay: 15
+healthcheck_timeout: 30
+healthcheck_path: "/health"

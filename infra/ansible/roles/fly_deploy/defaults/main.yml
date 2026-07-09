@@ -1,0 +1,4 @@
+---
+# Defaults — Role fly_deploy
+deploy_timeout: 300
+remote_only: true

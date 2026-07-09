@@ -168,72 +168,129 @@ jobs:
           retention-days: 7
 
   # ─────────────────────────────────────────────────
-  # 5. Docker Image Build
+  # 5. Docker Image Build & Push to GHCR
   # ─────────────────────────────────────────────────
   docker-build:
-    name: 🐳 Docker Build
+    name: 🐳 Docker Build & Push
     runs-on: ubuntu-latest
     needs: [test-backend, security-scan, build-frontend]
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Set lower case owner name
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Backend Image
+      - name: Build and Push Backend Image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
-          push: false
-          tags: cuisine-ensemble-backend:${{ github.sha }}
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/cuisine-ensemble-backend:latest
+            ghcr.io/${{ env.OWNER_LC }}/cuisine-ensemble-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build Frontend Image
+      - name: Build and Push Frontend Image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
-          push: false
-          tags: cuisine-ensemble-frontend:${{ github.sha }}
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/cuisine-ensemble-frontend:latest
+            ghcr.io/${{ env.OWNER_LC }}/cuisine-ensemble-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # ─────────────────────────────────────────────────
-  # 6. Simulate Kubernetes Staging Deployment
+  # 6. Deploy to Fly.io (Terraform + Ansible)
   # ─────────────────────────────────────────────────
-  deploy-staging:
-    name: 🚀 Deploy to Staging
+  deploy:
+    name: 🚀 Deploy to Fly.io
     runs-on: ubuntu-latest
     needs: docker-build
     if: github.ref == 'refs/heads/main'
-    environment:
-      name: staging
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Simulate K8s Deployment
+      - name: Set lower case owner name
         run: |
-          echo "🚀 Deploying CuisineEnsemble to Kubernetes staging..."
-          echo ""
-          echo "kubectl apply -f k8s/postgres.yml"
-          echo "kubectl apply -f k8s/backend.yml"
-          echo "kubectl apply -f k8s/frontend.yml"
-          echo ""
-          echo "✅ Backend deployment: cuisine-ensemble-backend:${{ github.sha }}"
-          echo "✅ Frontend deployment: cuisine-ensemble-frontend:${{ github.sha }}"
-          echo ""
-          echo "🌐 Staging URL: https://staging.cuisineensemble.fr"
-          echo "📊 Monitoring:  https://grafana.cuisineensemble.fr"
+          echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
+
+      - name: Set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Set up Python for Ansible
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Terraform Init
+        run: |
+          cd infra/terraform
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd infra/terraform
+          terraform apply -auto-approve \
+            -var="fly_api_token=${{ secrets.FLY_API_TOKEN }}" \
+            -var="secret_key=${{ secrets.SECRET_KEY }}" \
+            -var="backend_image=ghcr.io/${{ env.OWNER_LC }}/cuisine-ensemble-backend:latest" \
+            -var="frontend_image=ghcr.io/${{ env.OWNER_LC }}/cuisine-ensemble-frontend:latest"
+
+      - name: Run Ansible Post-Deploy (Migrations & Health Checks)
+        run: |
+          cd infra/ansible
+          ansible-playbook playbooks/migrate.yml -e "fly_api_token=${{ secrets.FLY_API_TOKEN }}"
+          ansible-playbook playbooks/healthcheck.yml -e "fly_api_token=${{ secrets.FLY_API_TOKEN }}"
+
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          cd infra/ansible
+          ansible-playbook playbooks/rollback.yml -e "fly_api_token=${{ secrets.FLY_API_TOKEN }}"
 
       - name: Post Deployment Summary
         run: |
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 CuisineEnsemble Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Version |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend | \`cuisine-ensemble-backend:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend | \`cuisine-ensemble-frontend:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Triggered by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Info |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Infrastructure | ✅ Terraform Apply Successful | Fly.io Apps & DB config |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend API | ✅ Active | [Swagger Docs](https://cuisine-ensemble-api.fly.dev/docs) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend UI | ✅ Active | [CuisineEnsemble Web](https://cuisine-ensemble-web.fly.dev) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`${{ github.sha }}\` | Triggered by @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+

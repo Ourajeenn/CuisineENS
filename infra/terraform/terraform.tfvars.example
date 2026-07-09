@@ -1,0 +1,34 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# terraform.tfvars.example — Template de configuration
+# ══════════════════════════════════════════════════════════════════════════════
+# 1. Copiez ce fichier : cp terraform.tfvars.example terraform.tfvars
+# 2. Remplissez toutes les valeurs
+# 3. NE COMMITEZ JAMAIS terraform.tfvars (il est dans .gitignore)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Obtenez votre token avec : flyctl auth token
+fly_api_token = "YOUR_FLY_API_TOKEN_HERE"
+
+# Votre organisation Fly.io (généralement "personal" pour un compte perso)
+fly_org_slug = "personal"
+
+# Région (cdg = Paris, ams = Amsterdam, fra = Frankfurt, lhr = Londres)
+region = "cdg"
+
+# Noms des apps (doivent être uniques sur toute la plateforme Fly.io)
+backend_app_name  = "cuisine-ensemble-api"
+frontend_app_name = "cuisine-ensemble-web"
+
+# Base de données
+postgres_cluster_name   = "cuisine-ensemble-db"
+postgres_volume_size_gb = 1
+
+# Images Docker (mettez à jour après chaque build CI/CD)
+backend_image  = "ghcr.io/ourajeenn/cuisine-ensemble-backend:latest"
+frontend_image = "ghcr.io/ourajeenn/cuisine-ensemble-frontend:latest"
+
+# Secrets (générez une clé secrète avec : python -c "import secrets; print(secrets.token_hex(32))")
+secret_key = "YOUR_SECRET_KEY_32_CHARS_MINIMUM_HERE"
+
+# Origines CORS autorisées
+allowed_origins = "https://cuisine-ensemble-web.fly.dev"

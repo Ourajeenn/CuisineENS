@@ -1,0 +1,79 @@
+---
+# ══════════════════════════════════════════════════════════════════════════════
+# Playbook : rollback.yml
+# Revient à la version précédente en cas d'échec
+# Usage : ansible-playbook playbooks/rollback.yml -e "fly_api_token=xxx"
+# ══════════════════════════════════════════════════════════════════════════════
+- name: "⏪ CuisineEnsemble — Rollback vers la version précédente"
+  hosts: flyio
+  gather_facts: false
+
+  tasks:
+    - name: "⚠️ Avertissement rollback"
+      debug:
+        msg: "Démarrage du rollback pour '{{ fly_backend_app }}' et '{{ fly_frontend_app }}'"
+
+    # ── Rollback backend ────────────────────────────────────────────────────
+    - name: "Lister les releases backend"
+      command: flyctl releases --app "{{ fly_backend_app }}"
+      register: backend_releases
+      changed_when: false
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+
+    - name: "Afficher les releases backend"
+      debug:
+        msg: "{{ backend_releases.stdout_lines }}"
+
+    - name: "Rollback backend (version N-1)"
+      command: >
+        flyctl deploy
+        --app "{{ fly_backend_app }}"
+        --image "{{ rollback_backend_image | default('') }}"
+        --remote-only
+      register: rollback_backend
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+      when: rollback_backend_image is defined and rollback_backend_image != ''
+
+    - name: "Rollback backend via flyctl rollback (si pas d'image spécifiée)"
+      command: flyctl deploy --app "{{ fly_backend_app }}" --image "{{ (backend_releases.stdout_lines | select('match', '.*v[0-9]+.*') | list)[-2] | regex_search('[^ ]+:[^ ]+') }}"
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+      when: rollback_backend_image is not defined or rollback_backend_image == ''
+      ignore_errors: true
+
+    # ── Rollback frontend ───────────────────────────────────────────────────
+    - name: "Rollback frontend (version N-1)"
+      command: >
+        flyctl deploy
+        --app "{{ fly_frontend_app }}"
+        --image "{{ rollback_frontend_image | default('') }}"
+        --remote-only
+      register: rollback_frontend
+      environment:
+        FLY_API_TOKEN: "{{ fly_api_token }}"
+      when: rollback_frontend_image is defined and rollback_frontend_image != ''
+      ignore_errors: true
+
+    # ── Vérification post-rollback ──────────────────────────────────────────
+    - name: "Attendre 30 secondes après le rollback"
+      pause:
+        seconds: 30
+
+    - name: "Vérifier la santé après rollback"
+      uri:
+        url: "{{ backend_url }}/health"
+        method: GET
+        status_code: 200
+        timeout: 30
+      register: post_rollback_health
+      retries: 5
+      delay: 15
+      until: post_rollback_health.status == 200
+
+    - name: "✅ Rollback terminé avec succès"
+      debug:
+        msg:
+          - "Backend et frontend ont été rollback avec succès"
+          - "Backend health : {{ post_rollback_health.json }}"

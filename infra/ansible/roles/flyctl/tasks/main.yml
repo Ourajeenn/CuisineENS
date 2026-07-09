@@ -1,0 +1,35 @@
+---
+# Tasks — Role flyctl
+# Vérifie si flyctl est installé, l'installe si nécessaire
+- name: "Vérifier si flyctl est déjà installé"
+  command: which flyctl
+  register: flyctl_check
+  changed_when: false
+  failed_when: false
+
+- name: "Installer flyctl (Linux/macOS)"
+  shell: |
+    curl -L "{{ flyctl_install_script_url }}" | sh
+  args:
+    creates: "{{ flyctl_install_dir }}/flyctl"
+  when:
+    - flyctl_check.rc != 0
+    - ansible_system != "Win32NT"
+
+- name: "Installer flyctl (Windows via PowerShell)"
+  win_shell: |
+    iwr https://fly.io/install.ps1 -useb | iex
+  when:
+    - flyctl_check.rc != 0
+    - ansible_system == "Win32NT"
+
+- name: "Vérifier que flyctl est disponible"
+  command: flyctl version
+  register: flyctl_installed_version
+  changed_when: false
+  environment:
+    FLY_API_TOKEN: "{{ fly_api_token | default('') }}"
+
+- name: "Afficher la version de flyctl"
+  debug:
+    msg: "flyctl installé : {{ flyctl_installed_version.stdout }}"

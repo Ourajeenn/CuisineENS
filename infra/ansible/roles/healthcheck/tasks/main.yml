@@ -1,0 +1,29 @@
+---
+# Tasks — Role healthcheck
+# Variables requises :
+#   - healthcheck_url : URL de base à vérifier (ex: https://mon-app.fly.dev)
+
+- name: "Vérifier que healthcheck_url est défini"
+  assert:
+    that:
+      - healthcheck_url is defined and healthcheck_url != ''
+    fail_msg: "La variable 'healthcheck_url' est requise"
+
+- name: "Health check : {{ healthcheck_url }}{{ healthcheck_path }}"
+  uri:
+    url: "{{ healthcheck_url }}{{ healthcheck_path }}"
+    method: GET
+    status_code: 200
+    timeout: "{{ healthcheck_timeout }}"
+    return_content: true
+  register: hc_result
+  retries: "{{ healthcheck_retries }}"
+  delay: "{{ healthcheck_delay }}"
+  until: hc_result.status == 200
+
+- name: "✅ Health check réussi"
+  debug:
+    msg:
+      - "URL  : {{ healthcheck_url }}{{ healthcheck_path }}"
+      - "Code : {{ hc_result.status }}"
+      - "Body : {{ hc_result.json | default(hc_result.content[:100]) }}"

@@ -1,0 +1,94 @@
+---
+# ══════════════════════════════════════════════════════════════════════════════
+# Playbook : healthcheck.yml
+# Effectue des smoke tests complets post-déploiement
+# Usage : ansible-playbook playbooks/healthcheck.yml -e "fly_api_token=xxx"
+# ══════════════════════════════════════════════════════════════════════════════
+- name: "🩺 CuisineEnsemble — Health Checks Post-Déploiement"
+  hosts: flyio
+  gather_facts: false
+
+  tasks:
+    # ── Backend health check ────────────────────────────────────────────────
+    - name: "Backend /health check"
+      uri:
+        url: "{{ backend_url }}/health"
+        method: GET
+        status_code: 200
+        timeout: 30
+        return_content: true
+      register: health_check
+      retries: "{{ health_check_retries | default(10) }}"
+      delay: "{{ health_check_delay | default(15) }}"
+      until: health_check.status == 200
+
+    - name: "✅ Backend health OK"
+      debug:
+        msg: "Réponse : {{ health_check.json }}"
+
+    # ── API v1 smoke test ───────────────────────────────────────────────────
+    - name: "API /api/v1/meals check (liste publique)"
+      uri:
+        url: "{{ backend_url }}/api/v1/meals"
+        method: GET
+        status_code: 200
+        timeout: 30
+        return_content: true
+      register: meals_check
+      retries: 3
+      delay: 5
+      until: meals_check.status == 200
+
+    - name: "✅ API meals endpoint OK"
+      debug:
+        msg: "Nombre de repas disponibles : {{ meals_check.json | length }}"
+
+    # ── Docs Swagger check ──────────────────────────────────────────────────
+    - name: "API /docs check (documentation Swagger)"
+      uri:
+        url: "{{ backend_url }}/docs"
+        method: GET
+        status_code: 200
+        timeout: 30
+      register: docs_check
+
+    - name: "✅ Swagger docs accessibles"
+      debug:
+        msg: "Documentation API accessible sur {{ backend_url }}/docs"
+
+    # ── Frontend check ──────────────────────────────────────────────────────
+    - name: "Frontend HTTP check"
+      uri:
+        url: "{{ frontend_url }}"
+        method: GET
+        status_code: 200
+        timeout: 30
+        return_content: true
+      register: frontend_check
+      retries: "{{ health_check_retries | default(10) }}"
+      delay: "{{ health_check_delay | default(15) }}"
+      until: frontend_check.status == 200
+
+    - name: "✅ Frontend accessible"
+      debug:
+        msg: "Frontend accessible sur {{ frontend_url }}"
+
+    - name: "Vérifier que le frontend contient 'CuisineEnsemble'"
+      assert:
+        that:
+          - "'CuisineEnsemble' in frontend_check.content or 'cuisine-ensemble' in frontend_check.content"
+        fail_msg: "❌ Le frontend ne semble pas servir la bonne app !"
+        success_msg: "✅ Le frontend sert bien CuisineEnsemble"
+
+    # ── Résumé final ────────────────────────────────────────────────────────
+    - name: "🎉 Tous les health checks sont passés"
+      debug:
+        msg:
+          - "✅ Backend health : OK"
+          - "✅ API meals      : OK ({{ meals_check.json | length }} repas)"
+          - "✅ Swagger docs   : OK"
+          - "✅ Frontend       : OK"
+          - ""
+          - "🌐 Backend  : {{ backend_url }}"
+          - "🌐 Frontend : {{ frontend_url }}"
+          - "📖 API Docs : {{ backend_url }}/docs"
