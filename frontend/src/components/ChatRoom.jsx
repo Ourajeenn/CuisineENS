@@ -34,7 +34,8 @@ export default function ChatRoom({ mealId, currentUser }) {
     // Dynamically build WS URL from VITE_API_URL or current location
     let wsBaseUrl = "ws://localhost:8000";
     if (import.meta.env.VITE_API_URL) {
-      wsBaseUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws");
+      let cleanUrl = import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, "");
+      wsBaseUrl = cleanUrl.replace(/^http/, "ws");
     } else if (window.location.hostname !== "localhost") {
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       wsBaseUrl = `${protocol}://${window.location.host}`;

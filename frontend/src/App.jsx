@@ -43,6 +43,14 @@ export default function App() {
   const [ratingVal, setRatingVal] = useState(5);
   const [ratingComment, setRatingComment] = useState("");
   const [ratingType, setRatingType] = useState("cook_rating"); // or "guest_rating"
+  const [mealGuests, setMealGuests] = useState([]); // List of guests to rate
+  
+  // Profile edit states
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileRole, setProfileRole] = useState("guest");
+  const [profileDiet, setProfileDiet] = useState([]);
+  const [profileAllergies, setProfileAllergies] = useState([]);
   
   // Admin stats
   const [adminStats, setAdminStats] = useState(null);
@@ -327,6 +335,48 @@ export default function App() {
     setNewMealAllergens(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
   };
 
+  const openProfileModal = () => {
+    if (currentUser) {
+      setProfileName(currentUser.name);
+      setProfileRole(currentUser.role);
+      setProfileDiet(currentUser.diet || []);
+      setProfileAllergies(currentUser.allergies || []);
+      setShowProfileModal(true);
+    }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.put("/users/me", {
+        name: profileName,
+        role: profileRole,
+        diet: profileDiet,
+        allergies: profileAllergies
+      });
+      setCurrentUser(res.data);
+      setShowProfileModal(false);
+      alert("Profil mis à jour avec succès !");
+      
+      // Update page context depending on new role permissions
+      if (profileRole === "guest" && page === "my-meals") {
+        setPage("explorer");
+      } else if (profileRole === "cook" && page === "dashboard") {
+        setPage("my-meals");
+      }
+    } catch (err) {
+      alert("Erreur lors de la mise à jour du profil : " + (err.response?.data?.detail || "Erreur"));
+    }
+  };
+
+  const handleProfileDietToggle = (d) => {
+    setProfileDiet(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
+  };
+
+  const handleProfileAllergyToggle = (a) => {
+    setProfileAllergies(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  };
+
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
@@ -348,7 +398,7 @@ export default function App() {
               <span>Mes réservations</span>
             </div>
             
-            {currentUser.role === "cook" && (
+            {(currentUser.role === "cook" || currentUser.role === "mixte") && (
               <div className={`nav-item ${page === "my-meals" ? "active" : ""}`} onClick={() => setPage("my-meals")}>
                 <i className="fas fa-store"></i>
                 <span>Mes repas proposés</span>
@@ -361,6 +411,11 @@ export default function App() {
                 <span>Dashboard Admin</span>
               </div>
             )}
+
+            <div className={`nav-item`} onClick={openProfileModal}>
+              <i className="fas fa-user-cog"></i>
+              <span>Mon Profil</span>
+            </div>
           </nav>
           
           <div className="sidebar-footer">
@@ -393,7 +448,11 @@ export default function App() {
                 </div>
                 <div className="d-flex flex-column text-start">
                   <span className="user-badge-name">{currentUser.name}</span>
-                  <span className="user-badge-role">{currentUser.role === 'cook' ? 'Cuisinier' : currentUser.role === 'admin' ? 'Admin' : 'Convive'}</span>
+                  <span className="user-badge-role">
+                    {currentUser.role === 'cook' ? '🍳 Cuisinier' : 
+                     currentUser.role === 'mixte' ? '🍳🍽️ Cuisinier & Convive' : 
+                     currentUser.role === 'admin' ? '🛡️ Admin' : '🍽️ Convive'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -501,8 +560,9 @@ export default function App() {
                 <div className="form-group">
                   <label className="form-label">Rôle principal</label>
                   <select className="form-select form-control" value={role} onChange={e => setRole(e.target.value)}>
-                    <option value="guest">Convive (parcourir et manger)</option>
-                    <option value="cook">Cuisinier (proposer des repas)</option>
+                    <option value="guest">🍽️ Convive (parcourir et manger)</option>
+                    <option value="cook">🍳 Cuisinier (proposer des repas)</option>
+                    <option value="mixte">🍳🍽️ Mixte (Cuisinier & Convive)</option>
                   </select>
                 </div>
 
@@ -877,14 +937,13 @@ export default function App() {
                                       // Get guests of this meal to rate
                                       try {
                                         const res = await api.get(`/participations/meals/${meal.id}`);
-                                        if (res.data.length === 0) {
+                                        const activeGuests = res.data.map(p => p.guest);
+                                        if (activeGuests.length === 0) {
                                           alert("Aucun convive ne s'est inscrit à ce repas.");
                                           return;
                                         }
-                                        // Rate first guest for simplicity or let user choose. 
-                                        // For MVP let's open rate modal for the first guest.
-                                        const firstGuest = res.data[0].guest;
-                                        setRatingTargetId(firstGuest.id);
+                                        setMealGuests(activeGuests);
+                                        setRatingTargetId(activeGuests[0].id);
                                         setRatingMealId(meal.id);
                                         setRatingType("guest_rating");
                                         setShowRateModal(true);
@@ -1157,6 +1216,21 @@ export default function App() {
             </div>
             <form onSubmit={handlePostRating}>
               <div className="modal-body">
+                {ratingType === "guest_rating" && mealGuests.length > 0 && (
+                  <div className="form-group">
+                    <label className="form-label">Sélectionner le convive à noter</label>
+                    <select 
+                      className="form-select form-control" 
+                      value={ratingTargetId || ""} 
+                      onChange={e => setRatingTargetId(parseInt(e.target.value))}
+                    >
+                      {mealGuests.map(g => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
                 <div className="form-group">
                   <label className="form-label">Note (sur 5 étoiles)</label>
                   <select className="form-select form-control" value={ratingVal} onChange={e => setRatingVal(parseInt(e.target.value))}>
@@ -1180,6 +1254,161 @@ export default function App() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 5. MON PROFIL MODAL */}
+      {showProfileModal && currentUser && (
+        <div className="modal-overlay">
+          <div className="profile-modal">
+
+            {/* Gradient Header */}
+            <div className="profile-modal-hero">
+              <button className="modal-close" style={{ position:"absolute", top:"1rem", right:"1rem", color:"rgba(255,255,255,0.8)", fontSize:"1.4rem" }} onClick={() => setShowProfileModal(false)}>×</button>
+              <div className="profile-avatar-large">
+                {currentUser.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="profile-hero-info">
+                <div className="profile-hero-name">{profileName || currentUser.name}</div>
+                <div className="profile-hero-email">{currentUser.email}</div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveProfile}>
+              <div className="profile-modal-body">
+
+                {/* Nom */}
+                <div className="profile-section">
+                  <div className="profile-section-label">
+                    <i className="fas fa-user"></i> Nom affiché
+                  </div>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={profileName}
+                    onChange={e => setProfileName(e.target.value)}
+                    required
+                    style={{ fontWeight: 600 }}
+                  />
+                </div>
+
+                {/* Rôle — Radio Cards */}
+                <div className="profile-section">
+                  <div className="profile-section-label">
+                    <i className="fas fa-id-badge"></i> Mon rôle
+                  </div>
+                  <div className="role-cards-grid">
+                    {[
+                      { value: "guest",  icon: "🍽️", title: "Convive",   desc: "Je réserve des repas" },
+                      { value: "cook",   icon: "🍳", title: "Cuisinier", desc: "Je propose des repas" },
+                      { value: "mixte",  icon: "🤝", title: "Mixte",     desc: "Les deux à la fois" }
+                    ].map(r => (
+                      <div
+                        key={r.value}
+                        className={`role-card ${profileRole === r.value ? "selected" : ""}`}
+                        onClick={() => setProfileRole(r.value)}
+                      >
+                        <div className="role-card-icon">{r.icon}</div>
+                        <div className="role-card-title">{r.title}</div>
+                        <div className="role-card-desc">{r.desc}</div>
+                        {profileRole === r.value && <div className="role-card-check"><i className="fas fa-check"></i></div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Préférences alimentaires — Pills */}
+                <div className="profile-section">
+                  <div className="profile-section-label">
+                    <i className="fas fa-leaf"></i> Préférences alimentaires
+                  </div>
+                  <div className="pill-grid">
+                    {[
+                      { label: "Végétarien", emoji: "🥦" },
+                      { label: "Végan",      emoji: "🌱" },
+                      { label: "Sans gluten",emoji: "🌾" },
+                      { label: "Sans lactose",emoji:"🥛" },
+                      { label: "Sans porc",  emoji: "🐷" },
+                      { label: "Halal",      emoji: "☪️" }
+                    ].map(({ label, emoji }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        className={`pill-tag ${profileDiet.includes(label) ? "active" : ""}`}
+                        onClick={() => handleProfileDietToggle(label)}
+                      >
+                        {emoji} {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Allergies — Pills (rouge) */}
+                <div className="profile-section">
+                  <div className="profile-section-label">
+                    <i className="fas fa-exclamation-triangle"></i> Allergies déclarées
+                  </div>
+                  <div className="pill-grid">
+                    {[
+                      { label: "Gluten",         emoji: "🌾" },
+                      { label: "Lactose",         emoji: "🥛" },
+                      { label: "Arachides",       emoji: "🥜" },
+                      { label: "Crustacés",       emoji: "🦞" },
+                      { label: "Fruits à coque",  emoji: "🌰" }
+                    ].map(({ label, emoji }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        className={`pill-tag danger ${profileAllergies.includes(label) ? "active" : ""}`}
+                        onClick={() => handleProfileAllergyToggle(label)}
+                      >
+                        {emoji} {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="modal-footer" style={{ borderTop: "1px solid rgba(200,90,50,0.08)", padding: "1rem 1.5rem", display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                <button type="button" className="btn btn-app btn-app-secondary" onClick={() => setShowProfileModal(false)}>Annuler</button>
+                <button type="submit" className="btn btn-app btn-app-primary" style={{ paddingLeft: "1.5rem", paddingRight: "1.5rem" }}>
+                  <i className="fas fa-save"></i> Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FAB: Proposer un repas (Cook/Mixte only, on explorer page) */}
+      {currentUser && (currentUser.role === "cook" || currentUser.role === "mixte") && page === "explorer" && (
+        <button
+          title="Proposer un nouveau repas"
+          onClick={() => setShowCreateMealModal(true)}
+          style={{
+            position: "fixed",
+            bottom: "2rem",
+            right: "2rem",
+            width: 60,
+            height: 60,
+            borderRadius: "50%",
+            background: "var(--primary)",
+            color: "#fff",
+            border: "none",
+            fontSize: "1.75rem",
+            boxShadow: "0 4px 20px rgba(200,90,50,0.45)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+            transition: "transform 0.15s ease, box-shadow 0.15s ease"
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.12)"; e.currentTarget.style.boxShadow = "0 6px 28px rgba(200,90,50,0.55)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(200,90,50,0.45)"; }}
+        >
+          +
+        </button>
       )}
     </div>
   );

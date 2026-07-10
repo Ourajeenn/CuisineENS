@@ -139,10 +139,10 @@ def update_current_user(user_in: schemas.UserUpdate, current_user: models.User =
 
 @app.post(f"{settings.API_V1_STR}/meals", response_model=schemas.MealResponse, status_code=status.HTTP_201_CREATED)
 def create_meal(meal_in: schemas.MealCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
-    if current_user.role not in ["cook", "admin"]:
+    if current_user.role not in ["cook", "admin", "mixte"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Seuls les cuisiniers ou administrateurs peuvent proposer des repas."
+            detail="Seuls les cuisiniers, les profils mixtes ou les administrateurs peuvent proposer des repas."
         )
     meal = crud.create_meal(db=db, meal_in=meal_in, cook_id=current_user.id)
     metrics.MEALS_CREATED.inc()
@@ -400,3 +400,21 @@ async def websocket_endpoint(
                 }, meal_id)
     except WebSocketDisconnect:
         websocket.manager.disconnect(websocket_conn, meal_id)
+
+# Serve frontend static files in production (React SPA build)
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.exists(static_dir):
+    # Any route not matching API endpoints will fall back to static files or index.html (for React Router)
+    @app.exception_handler(404)
+    async def custom_404_handler(request, exc):
+        # If it's an API route that genuinely failed, return 404
+        if request.url.path.startswith("/api/v1"):
+            return Response(content=json.dumps({"detail": "Not Found"}), media_type="application/json", status_code=404)
+        return FileResponse(os.path.join(static_dir, "index.html"))
+
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+

@@ -820,3 +820,219 @@ body {
     display: none;
   }
 }
+
+/* =============================================
+   PROFILE MODAL — Premium Redesign
+   ============================================= */
+
+.profile-modal {
+  background: white;
+  width: 92%;
+  max-width: 520px;
+  border-radius: var(--radius);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 90vh;
+}
+
+/* Gradient Hero Header */
+.profile-modal-hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 50%, var(--secondary) 100%);
+  padding: 2rem 1.5rem 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.profile-avatar-large {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: 3px solid rgba(255,255,255,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.profile-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-hero-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  font-family: var(--font-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-hero-email {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.75);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Body */
+.profile-modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Section */
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.profile-section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-section-label i {
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
+/* Role Cards */
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.role-card {
+  border: 2px solid rgba(200, 90, 50, 0.12);
+  border-radius: 14px;
+  padding: 0.9rem 0.5rem 0.75rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fefcf9;
+  position: relative;
+  user-select: none;
+}
+
+.role-card:hover {
+  border-color: rgba(200, 90, 50, 0.35);
+  background: rgba(200, 90, 50, 0.03);
+  transform: translateY(-2px);
+}
+
+.role-card.selected {
+  border-color: var(--primary);
+  background: rgba(200, 90, 50, 0.06);
+  box-shadow: 0 4px 14px rgba(200, 90, 50, 0.18);
+}
+
+.role-card-icon {
+  font-size: 1.75rem;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.role-card-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.role-card-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.role-card-check {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+}
+
+/* Pill Tags */
+.pill-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-tag {
+  border: 1.5px solid rgba(200, 90, 50, 0.2);
+  border-radius: 50px;
+  padding: 0.38rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: white;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.pill-tag:hover {
+  border-color: var(--primary);
+  background: rgba(200, 90, 50, 0.04);
+}
+
+.pill-tag.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(200, 90, 50, 0.3);
+}
+
+.pill-tag.danger {
+  border-color: rgba(220, 53, 69, 0.2);
+}
+
+.pill-tag.danger:hover {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.04);
+}
+
+.pill-tag.danger.active {
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
