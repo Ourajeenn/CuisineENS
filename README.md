@@ -1,4 +1,4 @@
-# 🍽️ CuisineEnsemble
+# CuisineEnsemble
 
 <div align="center">
 
@@ -11,7 +11,7 @@
 
 **Une plateforme conviviale pour organiser des repas partagés dans le quartier et diviser les coûts intelligemment.**
 
-[🚀 Demo Live](#) • [📖 Documentation API](http://localhost:8000/docs) • [🐛 Issues](https://github.com/Ourajeenn/CuisineEnsemble/issues)
+[ Demo Live](#) • [📖 Documentation API](http://localhost:8000/docs) • [🐛 Issues](https://github.com/Ourajeenn/CuisineEnsemble/issues)
 
 </div>
 
@@ -32,7 +32,7 @@
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 CuisineEnsemble/
@@ -203,5 +203,5 @@ MIT — voir [LICENSE](LICENSE) pour les détails.
 ---
 
 <div align="center">
-Fait avec ❤️ pour la convivialité et le partage
+Fait le 10.05.26 pour la convivialité et le partage
 </div>
