@@ -1,38 +1,43 @@
-# fly.toml — Configuration Fly.io pour CuisineEnsemble (Full Stack)
-app            = "cuisineensemble-kbpxxq"
-primary_region = "ams"
+# fly.toml app configuration file generated for cuisineens on 2026-07-11T23:01:10Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'cuisineens'
+primary_region = 'cdg'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT        = "8080"
-  ENVIRONMENT = "production"
+  ENVIRONMENT = 'production'
+  PORT = '8080'
 
 [http_service]
-  internal_port        = 8080
-  force_https          = true
-  auto_stop_machines   = true
-  auto_start_machines  = true
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
   min_machines_running = 1
-  processes            = ["app"]
+  processes = ['app']
 
   [http_service.concurrency]
-    type       = "connections"
+    type = 'connections'
     hard_limit = 250
     soft_limit = 200
 
-[[vm]]
-  memory   = "512mb"
-  cpu_kind = "shared"
-  cpus     = 1
-
 [checks]
   [checks.health]
-    grace_period = "15s"
-    interval     = "30s"
-    method       = "GET"
-    path         = "/health"
-    port         = 8080
-    timeout      = "10s"
-    type         = "http"
+    port = 8080
+    type = 'http'
+    interval = '30s'
+    timeout = '10s'
+    grace_period = '15s'
+    method = 'GET'
+    path = '/health'
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256

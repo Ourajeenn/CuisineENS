@@ -1,35 +1,38 @@
-# Stage 1: Build the React frontend
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm ci --prefer-offline --no-audit --no-fund
-COPY frontend/ .
-RUN npm run build
+# Stage 1: Build the Application
+# We use node:18-slim as the base for building and installing dependencies.
+FROM node:18-slim AS build
 
-# Stage 2: Build the FastAPI backend and combine
-FROM python:3.12-slim
-WORKDIR /app
+# Set the working directory inside the container
+WORKDIR /usr/src/app
 
-# Prevent Python from writing pyc files to disc & buffering stdout/stderr
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV PORT 8080
+# Copy package.json and package-lock.json first to leverage Docker caching.
+# If these files don't change, subsequent builds can skip 'npm install'.
+COPY package*.json ./
 
-# Install system dependencies if any
-RUN apk add --no-cache curl || true
+# Install dependencies
+RUN npm install
 
-# Copy and install backend requirements
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy the rest of the application source code
+COPY . .
 
-# Copy backend application
-COPY backend/ .
+# Stage 2: Create the Final Production Image
+# We use node:18-slim as a minimal runtime image.
+FROM node:18-slim
 
-# Copy built frontend assets into the backend static folder
-COPY --from=frontend-builder /app/dist ./static
+# Set the working directory
+WORKDIR /usr/src/app
 
-# Expose port 8080 (standard for Fly.io)
-EXPOSE 8080
+# Copy the node_modules and built application files from the 'build' stage
+COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/package*.json ./
+COPY --from=build /usr/src/app .
 
-# Run uvicorn on port 8080
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Expose the port your app runs on
+ENV PORT=8080
+EXPOSE $PORT
+
+# Run the application using the non-root user (recommended for security)
+USER node
+
+# Define the command to start your application
+CMD [ "node", "index.js" ]
